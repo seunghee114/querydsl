@@ -1,10 +1,13 @@
 package com.study.querydsl.entity;
 
+import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.study.querydsl.entitly.Member;
 import com.study.querydsl.entitly.QMember;
+import com.study.querydsl.entitly.QTeam;
 import com.study.querydsl.entitly.Team;
 import org.assertj.core.api.Assertions;
+import org.hibernate.boot.model.source.spi.EmbeddedAttributeMapping;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +19,7 @@ import javax.persistence.EntityManager;
 import java.util.List;
 
 import static com.study.querydsl.entitly.QMember.member;
+import static com.study.querydsl.entitly.QTeam.team;
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
@@ -31,8 +35,8 @@ public class QuerydslBasicTest {
         // 여기서 만들면 중복 코드를 줄일 수 있다. Querydsl을 사용하는 메소드에서 매번 하지 않아도 된다.
         // 동시성 문제가 걱정될 수 있지만 Spring의 Entity Manaber가 멀티 스레드에서 문제없이 동작하도록 만들어져 있다.
         queryFactory = new JPAQueryFactory(em);
-        Team teamA = new Team("temaA");
-        Team teamB = new Team("temaB");
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
         em.persist(teamA);
         em.persist(teamB);
 
@@ -151,6 +155,42 @@ public class QuerydslBasicTest {
                 .fetch();
 
         assertThat(result.size()).isEqualTo(2);
+    }
+
+    @Test
+    public void aggregation(){
+        List<Tuple> result = queryFactory.select(
+                        member.count(),
+                        member.age.sum(),
+                        member.age.avg(),
+                        member.age.max(),
+                        member.age.min()
+                ).from(member)
+                .fetch();
+        Tuple tuple = result.get(0);
+        assertThat(tuple.get(member.count())).isEqualTo(4);
+        assertThat(tuple.get(member.age.sum())).isEqualTo(100);
+        assertThat(tuple.get(member.age.avg())).isEqualTo(25);
+        assertThat(tuple.get(member.age.max())).isEqualTo(40);
+        assertThat(tuple.get(member.age.min())).isEqualTo(10);
+
+    }
+
+    // 팀 이름과 각 팀의 평균 연령 구하기
+    @Test
+    public void group() throws Exception {
+        List<Tuple> result = queryFactory
+                .select(team.name, member.age.avg())
+                .from(member)
+                .join(member.team, team)
+                .groupBy(team.name)
+                .fetch();
+        Tuple teamA = result.get(0);
+        Tuple teamB = result.get(1);
+        assertThat(teamA.get(team.name)).isEqualTo("teamA");
+        assertThat(teamA.get(member.age.avg())).isEqualTo(15);
+        assertThat(teamB.get(team.name)).isEqualTo("teamB");
+        assertThat(teamB.get(member.age.avg())).isEqualTo(35);
     }
 
 }
