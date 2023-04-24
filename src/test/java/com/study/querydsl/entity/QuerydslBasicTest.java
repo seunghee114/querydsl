@@ -13,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 
+import java.util.List;
+
+import static com.study.querydsl.entitly.QMember.member;
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
@@ -59,14 +62,58 @@ public class QuerydslBasicTest {
     }
 
     @Test
-    public void startQueryds(){
-        QMember m = new QMember("m");
+    public void startQuerydsl(){
+        // 지저분 버전
+//        QMember m = new QMember("m");
+//        QMember m1 = QMember.member;
+//        Member findMember = queryFactory
+//                .select(m)
+//                .from(m)
+//                .where(m.username.eq("member1"))    // 파라미터 바인딩
+//                .fetchOne();
+
+        //깔끔 버전
         Member findMember = queryFactory
-                .select(m)
-                .from(m)
-                .where(m.username.eq("member1"))    // 파라미터 바인딩
+                .select(member)
+                .from(member)
+                .where(member.username.eq("member1"))
                 .fetchOne();
         assertThat(findMember.getUsername()).isEqualTo("member1");
+
+    }
+
+    @Test
+    public void search(){
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(member.username.eq("member1")
+                        .and(member.age.eq(10)))
+                .fetchOne();
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    @Test
+    public void searchAndParam(){
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(member.username.eq("member1"),
+                        member.age.eq(10))
+                .fetchOne();
+        // 알아서 and로 조립됨
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    @Test
+    public void resultFetch(){
+        List<Member> fetch = queryFactory.selectFrom(member)
+                            .fetch();
+
+//        Member fetchOne = queryFactory.selectFrom(member)
+//                            .fetchOne();
+        // 여러 명인데 fetchOne()을 해서 오류남
+
+        Member fetchFirst = queryFactory.selectFrom(member)
+                            .fetchFirst();
     }
 
 }
