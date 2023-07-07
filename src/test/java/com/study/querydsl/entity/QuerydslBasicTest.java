@@ -15,6 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceUnit;
 
 import java.util.List;
 
@@ -268,5 +270,62 @@ public class QuerydslBasicTest {
             System.out.println("tuple = " + tuple);
         }
     }
+    @PersistenceUnit
+    EntityManagerFactory emf;
+    /**
+     * 페치 조인 미적용
+     */
+    @Test
+    public void fetchJoinUse(){
+        // 영속성 컨텍스트를 DB에 반영 후, 영속성 컨텍스트를 날려 깔끔한 상태에서 시작
+        em.flush();
+        em.clear();
+
+        // 멤버를 조회할 때 연관된 팀을 한꺼번에 가져온다.
+        Member findMember = queryFactory.selectFrom(member)
+                .join(member.team, team).fetchJoin()
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        // 파라미터로 받는 인자가 로딩이 되어있는지 안되어있는지 알려주는 함수
+        // 페치 조인 적용 후이기 때문에 로딩이 됨.
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+        assertThat(loaded).as("fetch join no").isTrue();
+    }
+
+    /**
+     * 페치 조인 적용
+     */
+    @Test
+    public void fetchJoinNo(){
+        // 영속성 컨텍스트를 DB에 반영 후, 영속성 컨텍스트를 날려 깔끔한 상태에서 시작
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory.selectFrom(member)
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        // 파라미터로 받는 인자가 로딩이 되어있는지 안되어있는지 알려주는 함수
+        // 페치 조인 적용 전이기 때문에 로딩이 되면 안됨.
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+        assertThat(loaded).as("fetch join no").isFalse();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
