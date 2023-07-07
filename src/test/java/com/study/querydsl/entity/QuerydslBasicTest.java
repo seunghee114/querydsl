@@ -259,6 +259,7 @@ public class QuerydslBasicTest {
 
         List<Tuple> result = queryFactory.select(member, team)
                 .from(member)
+//                .leftJoin(member.team) 원래 조인은 이런 식으로 하는데 막 조인 할거라 그냥 team을 넣는다.
                 .leftJoin(team).on(member.username.eq(team.name))
                 .fetch();
 
