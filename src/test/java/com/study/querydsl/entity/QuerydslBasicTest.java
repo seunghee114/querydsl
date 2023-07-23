@@ -1,6 +1,7 @@
 package com.study.querydsl.entity;
 
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.study.querydsl.entitly.Member;
 import com.study.querydsl.entitly.QMember;
@@ -20,6 +21,7 @@ import javax.persistence.PersistenceUnit;
 
 import java.util.List;
 
+import static com.querydsl.jpa.JPAExpressions.*;
 import static com.study.querydsl.entitly.QMember.member;
 import static com.study.querydsl.entitly.QTeam.team;
 import static org.assertj.core.api.Assertions.*;
@@ -311,9 +313,83 @@ public class QuerydslBasicTest {
         boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
         assertThat(loaded).as("fetch join no").isFalse();
     }
+    /**
+     * 서브 쿼리 예시
+     * 나이가 가장 많은 회원 조회
+     */
+    @Test
+    public void subQuery(){
+        // alias가 달라야 하니까 QMember를 하나 만들어서 서브 쿼리에 사용한다.
+        QMember memberSub = new QMember("memberSub");
+        List<Member> result = queryFactory.selectFrom(member)
+                .where(member.age.eq(
+                        select(memberSub.age.max())
+                                .from(memberSub)
+                ))
+                .fetch();
+        assertThat(result).extracting("age").containsExactly(40);
+    }
+    /**
+     * 서브 쿼리 예시
+     * 나이가 평균 이상인 회원 조회
+     */
+    @Test
+    public void subQueryGoe(){
+        // alias가 달라야 하니까 QMember를 하나 만들어서 서브 쿼리에 사용한다.
+        QMember memberSub = new QMember("memberSub");
+        List<Member> result = queryFactory.selectFrom(member)
+                .where(member.age.goe(
+                        select(memberSub.age.avg())
+                                .from(memberSub)
+                ))
+                .fetch();
+        assertThat(result).extracting("age").containsExactly(30, 40);
+    }
+    /**
+     * 서브 쿼리 예시
+     * 억지성 예제, in 쓰는 거 보여주기 위함
+     */
+    @Test
+    public void subQueryIn(){
+        // alias가 달라야 하니까 QMember를 하나 만들어서 서브 쿼리에 사용한다.
+        QMember memberSub = new QMember("memberSub");
+        List<Member> result = queryFactory.selectFrom(member)
+                .where(member.age.in(
+                        select(memberSub.age)
+                                .from(memberSub)
+                                .where(memberSub.age.gt(10))
+                ))
+                .fetch();
+        assertThat(result).extracting("age").containsExactly(20, 30, 40);
+    }
 
+    /**
+     * select 서브 쿼리 예시
+     */
+    @Test
+    public void selectSubQuery(){
+        QMember memberSub = new QMember("memberSub");
+        List<Tuple> result = queryFactory.select(member.username,
+                        select(memberSub.age.avg())
+                                .from(memberSub))
+                .from(member).fetch();
 
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+    }
 
+    /**
+     * JPA JPQL 서브쿼리의 한계점으로 from 절의 서브쿼리(인라인 뷰)는 지원하지 않는다.
+     *
+     * 해결방안
+     * 1. 서브쿼리를 join으로 변경한다. (가능한 상황도 있고 불가능한 상황도 있음)
+     * 2. 애플리케이션에서 쿼리를 2번 분리해서 실행한다. (상황에 따라 다르지만 2번 분리해서 실행하는 방법도 있음)
+     * 3. native SQL을 사용한다.
+     *
+     * from 절에 서브쿼리를 사용하는 많은 이유가 있는데 대부분 안좋은 이유.
+     * -> db는 데이터만 가져오는 용도로만 사용하고 application 단에서 로직을 처리하고 있는지 확인해보기
+     */
 
 
 
