@@ -2,6 +2,7 @@ package com.study.querydsl.entity;
 
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.study.querydsl.entitly.Member;
@@ -430,9 +431,37 @@ public class QuerydslBasicTest {
      * (물론 DB에서 해야 할 경우도 있지만...)
      */
 
-
-
-
+    /**
+     * 상수, 문자
+     */
+    @Test
+    public void constant() {
+        List<Tuple> result = queryFactory.select(member.username, Expressions.constant("A"))
+                .from(member)
+                .fetch();
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+    }
+    /**
+     * 문자 더하기
+     * {username}_{age}
+     * age의 type이 숫자여서 concat하기가 어려운데 .stringValue()를 사용하면 문자로 바꿀 수 있다.
+     * 문자가 아닌 다른 타입은 stringValue()로 문자로 바꿀 수 있다.
+     * -> 해당 방법은 ENUM을 처리할 때도 자주 사용한다.
+     */
+    @Test
+    public void concat() {
+//        이건 안됨. 왜냐면 age의 type은 숫자니까
+//        queryFactory.select(member.username.concat("_").concat(member.age))
+        List<String> result = queryFactory.select(member.username.concat("_").concat(member.age.stringValue()))
+                .from(member)
+                .where(member.username.eq("member1"))
+                .fetch();
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
 
 
 
