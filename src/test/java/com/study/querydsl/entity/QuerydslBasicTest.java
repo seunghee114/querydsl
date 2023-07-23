@@ -1,6 +1,7 @@
 package com.study.querydsl.entity;
 
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.study.querydsl.entitly.Member;
@@ -391,9 +392,43 @@ public class QuerydslBasicTest {
      * -> db는 데이터만 가져오는 용도로만 사용하고 application 단에서 로직을 처리하고 있는지 확인해보기
      */
 
-
-
-
+    /**
+     * 기본 case 구문
+     */
+    @Test
+    public void basicCase() {
+        List<String> result = queryFactory
+                .select(member.age
+                        .when(10).then("열살")
+                        .when(20).then("스무살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+    /**
+     * 복잡한 case 구문
+     */
+    @Test
+    public void complexCase() {
+        List<String> result = queryFactory.select(new CaseBuilder()
+                        .when(member.age.between(0, 20)).then("0-20살")
+                        .when(member.age.between(21, 30)).then("21-30살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+    /**
+     * 꼭 case 문을 사용해야 하는가?
+     * 이런 부분은 DB에서 하면 안됨. 좋지 않음
+     * 그냥 가져온 다음에 application 단에서 로직으로 처리해주는 것이 더 좋음
+     * (물론 DB에서 해야 할 경우도 있지만...)
+     */
 
 
 
