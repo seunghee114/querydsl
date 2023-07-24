@@ -462,8 +462,40 @@ public class QuerydslBasicTest {
             System.out.println("s = " + s);
         }
     }
-
-
+    /**
+     * 프로젝션 대상이 하나인 경우
+     */
+    @Test
+    public void simpleProjection(){
+        List<String> result = queryFactory
+                .select(member.username)    // 보통 여기에 들어가는 걸 projection이라고 한다.
+                .from(member)
+                .fetch();
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+    /**
+     * 프로젝션 대상이 여러 개인 경우
+     */
+    @Test
+    public void tupleProjection() {
+        List<Tuple> result = queryFactory
+                .select(member.username, member.age)
+                .from(member)
+                .fetch();
+        for (Tuple tuple : result) {
+            String username = tuple.get(member.username);
+            Integer age = tuple.get(member.age);
+            System.out.println("username = " + username + " age = " + age);
+        }
+    }
+    /**
+     * tuple의 패키지를 보면 querydsl이다.
+     * -> repository 객체에서 사용하는 것은 괜찮은데 service나 controller까지 넘어가는 것은 좋지 않은 것 같다.
+     * -> 뭘 사용하는지 알려줄 필요가 없으니까!
+     * -> 의존성이 없게 설계한 후에 나중에 querydsl이 아니라 다른 기술로 바꿔도 다른 계층은 영향을 받지 않도록
+     */
 
 
 
