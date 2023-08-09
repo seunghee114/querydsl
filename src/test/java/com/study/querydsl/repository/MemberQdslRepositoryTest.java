@@ -54,7 +54,7 @@ class MemberQdslRepositoryTest {
         MemberSearchCondition condition = new MemberSearchCondition();
         // 조건이 아예 없을 경우에 쿼리가 데이터를 다 끌어온다. -> 데이터가 많을 경우 문제가 된다.
         condition.setTeamName("teamB");
-        List<MemberTeamDto> result = memberQdslRepository.searchByBuilder(condition);
+        List<MemberTeamDto> result = memberQdslRepository.search(condition);
         assertThat(result).extracting("username").containsExactly("member3", "member4");
     }
 }
